@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<!--
+  XOX vs OXO — a tic-tac-toe variant played against a Minimax AI
+  Copyright (c) 2025 Dimitris-Kosmas Karras, Panagiotis Theodoropoulos
+  Licensed under the MIT License (see LICENSE).
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XOX · OXO — Minimax Puzzle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-1:#eef4fa; --bg-2:#dfe9f4;
+    --card:#ffffff; --ink:#344861; --ink-soft:#647892; --muted:#9aa9bd;
+    --grid:#bfccdc; --frame:#344861;
+    --cell:#ffffff; --cell-hover:#dbe7f4; --cell-related:#eef3f9;
+    --x:#2f7bf6; --x-soft:#e7f0ff;
+    --o:#f4923b; --o-soft:#fff1e3;
+    --win:#3ec47a; --win-soft:#dcf5e6;
+    --accent:#2f7bf6;
+    --round:'Baloo 2',system-ui,sans-serif;
+    --body:'Nunito',system-ui,sans-serif;
+    --shadow:0 18px 40px -22px rgba(52,72,97,.45);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    min-height:100vh;display:flex;align-items:center;justify-content:center;
+    padding:clamp(16px,4vw,44px);font-family:var(--body);color:var(--ink);
+    background:radial-gradient(120% 120% at 50% 0%, var(--bg-1), var(--bg-2));
+  }
+  .app{width:100%;max-width:470px}
+
+  header{text-align:center;margin-bottom:18px}
+  .title{font-family:var(--round);font-weight:800;font-size:clamp(30px,8vw,44px);letter-spacing:.5px;line-height:1}
+  .title .x{color:var(--x)} .title .o{color:var(--o)} .title .sep{color:var(--muted);font-weight:600;font-size:.62em;vertical-align:middle}
+  .sub{font-size:13.5px;color:var(--ink-soft);margin-top:6px;font-weight:600}
+
+  .rules{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+  .chip{font-size:12px;font-weight:700;color:var(--ink-soft);background:var(--card);
+        border:1.5px solid #e4ebf3;border-radius:999px;padding:6px 13px;box-shadow:0 2px 6px -3px rgba(52,72,97,.25)}
+  .chip .x{color:var(--x)} .chip .o{color:var(--o)}
+
+  .status{
+    display:flex;align-items:center;gap:12px;margin:18px 0 16px;
+    background:var(--card);border:1.5px solid #e4ebf3;border-radius:16px;padding:14px 16px;
+    box-shadow:var(--shadow);min-height:54px;transition:border-color .25s ease;
+  }
+  .status .pip{width:13px;height:13px;border-radius:50%;flex:none;background:var(--muted);transition:all .25s}
+  .status.x .pip{background:var(--x)} .status.x{border-color:#bcd6ff}
+  .status.o .pip{background:var(--o)} .status.o{border-color:#ffd9b8}
+  .status.win .pip{background:var(--win)} .status.win{border-color:#aee6c5}
+  .status .msg{font-size:14.5px;font-weight:700;color:var(--ink)}
+  .status .msg .hl{font-weight:800}
+  .thinking::after{content:'';animation:dots 1.2s steps(4,end) infinite}
+  @keyframes dots{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}}
+
+  /* Sudoku-style grid: contiguous cells, thin inner lines, thick outer frame */
+  .board{
+    display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(4,1fr);
+    gap:1.5px;background:var(--grid);aspect-ratio:3/4;
+    border:3px solid var(--frame);border-radius:8px;overflow:hidden;
+    box-shadow:var(--shadow);
+  }
+  .cell{
+    background:var(--cell);display:flex;align-items:center;justify-content:center;
+    font-family:var(--round);font-weight:700;font-size:clamp(40px,13vw,68px);line-height:1;
+    cursor:pointer;transition:background-color .15s ease;color:var(--ink);
+  }
+  .cell.empty:hover{background:var(--cell-hover)}
+  .cell.disabled{cursor:default}
+  .cell .mark{display:inline-block;animation:pop .26s cubic-bezier(.2,.9,.3,1.4)}
+  .cell.x{color:var(--x);background:var(--x-soft)}
+  .cell.o{color:var(--o);background:var(--o-soft)}
+  .cell.aimove{box-shadow:inset 0 0 0 3px var(--x)}
+  .cell.winning{background:var(--win-soft)!important;color:var(--win)!important;animation:glow 1.1s ease-in-out infinite}
+  @keyframes pop{0%{transform:scale(.3);opacity:0}100%{transform:scale(1);opacity:1}}
+  @keyframes glow{0%,100%{box-shadow:inset 0 0 0 3px var(--win)}50%{box-shadow:inset 0 0 0 3px rgba(62,196,122,.45)}}
+
+  .footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:18px}
+  .newgame{
+    font-family:var(--round);font-weight:700;font-size:15px;
+    background:var(--accent);color:#fff;border:none;border-radius:13px;
+    padding:13px 22px;cursor:pointer;box-shadow:0 8px 18px -8px var(--accent);transition:transform .12s ease,filter .15s ease;
+  }
+  .newgame:hover{filter:brightness(1.05)} .newgame:active{transform:translateY(1px)}
+  .meta{font-size:12px;color:var(--muted);text-align:right;font-weight:700;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="title"><span class="x">XOX</span> <span class="sep">vs</span> <span class="o">OXO</span></div>
+    <div class="sub">A tic-tac-toe puzzle vs an unbeatable Minimax</div>
+    <div class="rules">
+      <span class="chip">You play <span class="o">O</span> · win with <b>O-X-O</b></span>
+      <span class="chip">AI plays <span class="x">X</span> · wins with <b>X-O-X</b></span>
+    </div>
+  </header>
+
+  <div class="status" id="status">
+    <span class="pip"></span>
+    <span class="msg" id="msg">Loading…</span>
+  </div>
+
+  <div class="board" id="board"></div>
+
+  <div class="footer">
+    <button class="newgame" id="newgame">New game</button>
+    <div class="meta">unbeatable AI<br>full-depth search</div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+const ROWS=4, COLS=3, EMPTY='.', MAX='X', MIN='O', WIN=100;
+
+// ---------- Rules ----------
+function allLines(){
+  const L=[];
+  for(let r=0;r<ROWS;r++) for(let c=0;c+2<COLS;c++) L.push([[r,c],[r,c+1],[r,c+2]]);          // rows
+  for(let c=0;c<COLS;c++) for(let r=0;r+2<ROWS;r++) L.push([[r,c],[r+1,c],[r+2,c]]);          // cols
+  for(let r=0;r+2<ROWS;r++) for(let c=0;c+2<COLS;c++){                                         // diagonals
+    L.push([[r,c],[r+1,c+1],[r+2,c+2]]);
+    L.push([[r+2,c],[r+1,c+1],[r,c+2]]);
+  }
+  return L;
+}
+const LINES = allLines();
+
+function winningLine(g){
+  for(const ln of LINES){
+    const s = g[ln[0][0]][ln[0][1]] + g[ln[1][0]][ln[1][1]] + g[ln[2][0]][ln[2][1]];
+    if(s==='XOX') return {line:ln, winner:MAX};
+    if(s==='OXO') return {line:ln, winner:MIN};
+  }
+  return null;
+}
+function result(g){ const w=winningLine(g); return w ? (w.winner===MAX?1:-1) : 0; }
+function isFull(g){ for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++) if(g[r][c]===EMPTY) return false; return true; }
+
+// ---------- Minimax with alpha-beta + depth-aware scoring ----------
+function minimax(g, maximizing, depth, alpha, beta){
+  const res=result(g);
+  if(res===1) return WIN-depth;
+  if(res===-1) return depth-WIN;
+  if(isFull(g)) return 0;
+
+  if(maximizing){
+    let best=-Infinity;
+    for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++) if(g[r][c]===EMPTY){
+      g[r][c]=MAX; best=Math.max(best, minimax(g,false,depth+1,alpha,beta)); g[r][c]=EMPTY;
+      alpha=Math.max(alpha,best); if(beta<=alpha) return best;
+    }
+    return best;
+  } else {
+    let best=Infinity;
+    for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++) if(g[r][c]===EMPTY){
+      g[r][c]=MIN; best=Math.min(best, minimax(g,true,depth+1,alpha,beta)); g[r][c]=EMPTY;
+      beta=Math.min(beta,best); if(beta<=alpha) return best;
+    }
+    return best;
+  }
+}
+function findBestMove(g){
+  let bestScore=-Infinity, move=null;
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++) if(g[r][c]===EMPTY){
+    g[r][c]=MAX; const s=minimax(g,false,1,-Infinity,Infinity); g[r][c]=EMPTY;
+    if(s>bestScore){ bestScore=s; move=[r,c]; }
+  }
+  return move;
+}
+
+// ---------- UI ----------
+const boardEl=document.getElementById("board");
+const statusEl=document.getElementById("status");
+const msgEl=document.getElementById("msg");
+const cellEls=[];
+
+let grid, phase, startX;
+// phases: 'placeX' -> 'placeO' -> 'ai' -> 'player' -> 'over'
+
+function newGame(){
+  grid=Array.from({length:ROWS},()=>Array(COLS).fill(EMPTY));
+  phase="placeX"; startX=null;
+  buildBoard();
+  setStatus("x", "Tap a cell to place the starting <span class='hl' style='color:var(--x)'>X</span>");
+}
+
+function buildBoard(){
+  boardEl.innerHTML=""; cellEls.length=0;
+  for(let r=0;r<ROWS;r++){
+    const row=[];
+    for(let c=0;c<COLS;c++){
+      const d=document.createElement("div");
+      d.className="cell empty"; d.dataset.r=r; d.dataset.c=c;
+      d.addEventListener("click",()=>onClick(r,c));
+      boardEl.appendChild(d); row.push(d);
+    }
+    cellEls.push(row);
+  }
+}
+
+function renderCell(r,c,{ai=false}={}){
+  const el=cellEls[r][c]; const v=grid[r][c];
+  el.className="cell"+(v===EMPTY?" empty":(v===MAX?" x":" o"));
+  el.innerHTML = v===EMPTY ? "" : `<span class="mark">${v}</span>`;
+  if(ai) el.classList.add("aimove");
+}
+
+function setStatus(kind, html){
+  statusEl.className="status"+(kind?" "+kind.replace("think",""):"");
+  msgEl.className="msg"+(kind==="thinkx"?" thinking":"");
+  msgEl.innerHTML=html;
+}
+
+function adjacent(r1,c1,r2,c2){ return Math.abs(r1-r2)<=1 && Math.abs(c1-c2)<=1; }
+
+function onClick(r,c){
+  if(phase==="placeX"){
+    if(grid[r][c]!==EMPTY) return;
+    grid[r][c]=MAX; startX=[r,c]; renderCell(r,c);
+    phase="placeO";
+    setStatus("o","Now place the starting <span class='hl' style='color:var(--o)'>O</span> — not next to X");
+  }
+  else if(phase==="placeO"){
+    if(grid[r][c]!==EMPTY) return;
+    if(adjacent(r,c,startX[0],startX[1])){
+      flashInvalid(r,c);
+      setStatus("o","Too close to X — pick a cell that isn't touching it");
+      return;
+    }
+    grid[r][c]=MIN; renderCell(r,c);
+    aiTurn();
+  }
+  else if(phase==="player"){
+    if(grid[r][c]!==EMPTY) return;
+    grid[r][c]=MIN; renderCell(r,c);
+    if(checkEnd()) return;
+    aiTurn();
+  }
+}
+
+function flashInvalid(r,c){
+  const el=cellEls[r][c];
+  el.animate([{transform:'translateX(0)'},{transform:'translateX(-5px)'},{transform:'translateX(5px)'},{transform:'translateX(0)'}],{duration:240});
+}
+
+function aiTurn(){
+  phase="ai";
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++) cellEls[r][c].classList.remove("aimove");
+  setStatus("thinkx","<span style='color:var(--x)'>X</span> is thinking");
+  setTimeout(()=>{
+    const move=findBestMove(grid);
+    if(move){ grid[move[0]][move[1]]=MAX; renderCell(move[0],move[1],{ai:true}); }
+    if(checkEnd()) return;
+    phase="player";
+    setStatus("o","Your turn — place an <span class='hl' style='color:var(--o)'>O</span>");
+  }, 480);
+}
+
+function checkEnd(){
+  const w=winningLine(grid);
+  if(w){
+    w.line.forEach(([r,c])=>cellEls[r][c].classList.add("winning"));
+    lockBoard(); phase="over";
+    if(w.winner===MAX) setStatus("win","<span style='color:var(--x)'>X wins</span> with <span class='hl'>XOX</span> — the AI is unbeatable");
+    else               setStatus("win","<span style='color:var(--o)'>You win</span> with <span class='hl'>OXO</span>! 🎉");
+    return true;
+  }
+  if(isFull(grid)){
+    lockBoard(); phase="over";
+    setStatus("win","Draw — a perfectly played game");
+    return true;
+  }
+  return false;
+}
+
+function lockBoard(){
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+    cellEls[r][c].classList.add("disabled");
+    cellEls[r][c].classList.remove("empty");
+  }
+}
+
+document.getElementById("newgame").addEventListener("click",newGame);
+newGame();
+</script>
+</body>
+</html>
