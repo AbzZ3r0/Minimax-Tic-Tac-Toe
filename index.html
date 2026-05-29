@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap"
       rel="stylesheet"
     />
     <style>
@@ -28,7 +28,6 @@
         --frame: #344861;
         --cell: #ffffff;
         --cell-hover: #dbe7f4;
-        --cell-related: #eef3f9;
         --x: #2f7bf6;
         --x-soft: #e7f0ff;
         --o: #f4923b;
@@ -36,6 +35,12 @@
         --win: #3ec47a;
         --win-soft: #dcf5e6;
         --accent: #2f7bf6;
+        --pos: #2e9e5b;
+        --pos-bg: #e7f6ee;
+        --neg: #d5564b;
+        --neg-bg: #fbe6e4;
+        --zero: #8aa0b8;
+        --zero-bg: #eef3f8;
         --round: "Baloo 2", system-ui, sans-serif;
         --body: "Nunito", system-ui, sans-serif;
         --shadow: 0 18px 40px -22px rgba(52, 72, 97, 0.45);
@@ -52,7 +57,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: clamp(16px, 4vw, 44px);
+        padding: clamp(14px, 4vw, 40px);
         font-family: var(--body);
         color: var(--ink);
         background: radial-gradient(
@@ -63,17 +68,17 @@
       }
       .app {
         width: 100%;
-        max-width: 470px;
+        max-width: 480px;
       }
 
       header {
         text-align: center;
-        margin-bottom: 18px;
+        margin-bottom: 14px;
       }
       .title {
         font-family: var(--round);
         font-weight: 800;
-        font-size: clamp(30px, 8vw, 44px);
+        font-size: clamp(28px, 7.5vw, 42px);
         letter-spacing: 0.5px;
         line-height: 1;
       }
@@ -90,47 +95,63 @@
         vertical-align: middle;
       }
       .sub {
-        font-size: 13.5px;
+        font-size: 13px;
         color: var(--ink-soft);
-        margin-top: 6px;
+        margin-top: 5px;
         font-weight: 600;
       }
 
-      .rules {
+      .scoreboard {
         display: flex;
         gap: 8px;
         justify-content: center;
-        flex-wrap: wrap;
-        margin-top: 14px;
+        margin: 13px 0;
       }
-      .chip {
-        font-size: 12px;
-        font-weight: 700;
-        color: var(--ink-soft);
+      .score-pill {
+        flex: 1;
+        max-width: 130px;
         background: var(--card);
         border: 1.5px solid #e4ebf3;
-        border-radius: 999px;
-        padding: 6px 13px;
-        box-shadow: 0 2px 6px -3px rgba(52, 72, 97, 0.25);
+        border-radius: 13px;
+        padding: 8px 6px;
+        text-align: center;
+        box-shadow: 0 2px 8px -4px rgba(52, 72, 97, 0.3);
       }
-      .chip .x {
+      .score-pill .lbl {
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .score-pill .num {
+        font-family: var(--round);
+        font-weight: 800;
+        font-size: 22px;
+        line-height: 1.1;
+        margin-top: 1px;
+      }
+      .score-pill.you .num {
+        color: var(--o);
+      }
+      .score-pill.ai .num {
         color: var(--x);
       }
-      .chip .o {
-        color: var(--o);
+      .score-pill.draw .num {
+        color: var(--ink-soft);
       }
 
       .status {
         display: flex;
         align-items: center;
-        gap: 12px;
-        margin: 18px 0 16px;
+        gap: 11px;
+        margin: 0 0 14px;
         background: var(--card);
         border: 1.5px solid #e4ebf3;
         border-radius: 16px;
-        padding: 14px 16px;
+        padding: 13px 15px;
         box-shadow: var(--shadow);
-        min-height: 54px;
+        min-height: 52px;
         transition: border-color 0.25s ease;
       }
       .status .pip {
@@ -186,7 +207,6 @@
         }
       }
 
-      /* Sudoku-style grid: contiguous cells, thin inner lines, thick outer frame */
       .board {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -206,11 +226,12 @@
         justify-content: center;
         font-family: var(--round);
         font-weight: 700;
-        font-size: clamp(40px, 13vw, 68px);
+        font-size: clamp(38px, 12vw, 64px);
         line-height: 1;
         cursor: pointer;
         transition: background-color 0.15s ease;
         color: var(--ink);
+        position: relative;
       }
       .cell.empty:hover {
         background: var(--cell-hover);
@@ -232,6 +253,9 @@
       }
       .cell.aimove {
         box-shadow: inset 0 0 0 3px var(--x);
+      }
+      .cell.hint {
+        animation: hintpulse 1s ease-in-out infinite;
       }
       .cell.winning {
         background: var(--win-soft) !important;
@@ -257,41 +281,155 @@
           box-shadow: inset 0 0 0 3px rgba(62, 196, 122, 0.45);
         }
       }
-
-      .footer {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        margin-top: 18px;
+      @keyframes hintpulse {
+        0%,
+        100% {
+          box-shadow: inset 0 0 0 3px var(--o);
+        }
+        50% {
+          box-shadow: inset 0 0 0 3px rgba(244, 146, 59, 0.35);
+        }
       }
-      .newgame {
+
+      /* score overlay chips during AI analysis */
+      .cell .score {
+        font-family: var(--body);
+        font-weight: 900;
+        font-size: clamp(13px, 3.6vw, 18px);
+        padding: 3px 8px;
+        border-radius: 8px;
+        animation: pop 0.2s ease;
+      }
+      .cell .score.pos {
+        color: var(--pos);
+        background: var(--pos-bg);
+      }
+      .cell .score.neg {
+        color: var(--neg);
+        background: var(--neg-bg);
+      }
+      .cell .score.zero {
+        color: var(--zero);
+        background: var(--zero-bg);
+      }
+      .cell.best-score {
+        box-shadow: inset 0 0 0 3px var(--x);
+      }
+
+      .controls {
+        display: flex;
+        gap: 8px;
+        margin-top: 16px;
+        flex-wrap: wrap;
+      }
+      .btn {
         font-family: var(--round);
         font-weight: 700;
-        font-size: 15px;
-        background: var(--accent);
-        color: #fff;
-        border: none;
-        border-radius: 13px;
-        padding: 13px 22px;
+        font-size: 14px;
+        border-radius: 12px;
+        padding: 11px 16px;
         cursor: pointer;
-        box-shadow: 0 8px 18px -8px var(--accent);
+        border: 1.5px solid #d8e1ea;
+        background: var(--card);
+        color: var(--ink);
+        box-shadow: 0 3px 8px -4px rgba(52, 72, 97, 0.3);
         transition:
           transform 0.12s ease,
-          filter 0.15s ease;
+          filter 0.15s ease,
+          background 0.15s;
       }
-      .newgame:hover {
-        filter: brightness(1.05);
+      .btn:hover {
+        background: #f3f7fb;
       }
-      .newgame:active {
+      .btn:active {
         transform: translateY(1px);
       }
-      .meta {
-        font-size: 12px;
-        color: var(--muted);
-        text-align: right;
+      .btn.primary {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
+        box-shadow: 0 8px 18px -8px var(--accent);
+      }
+      .btn.primary:hover {
+        filter: brightness(1.05);
+        background: var(--accent);
+      }
+      .btn:disabled {
+        opacity: 0.45;
+        cursor: default;
+        transform: none;
+      }
+      .btn.flex {
+        flex: 1;
+      }
+
+      .toggle {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        margin-top: 12px;
+        font-size: 13px;
         font-weight: 700;
-        line-height: 1.5;
+        color: var(--ink-soft);
+        background: var(--card);
+        border: 1.5px solid #e4ebf3;
+        border-radius: 12px;
+        padding: 11px 14px;
+        cursor: pointer;
+        user-select: none;
+      }
+      .toggle .sw {
+        width: 38px;
+        height: 22px;
+        border-radius: 999px;
+        background: #cdd8e4;
+        position: relative;
+        transition: background 0.2s;
+        flex: none;
+      }
+      .toggle .sw::after {
+        content: "";
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+        transition: transform 0.2s;
+      }
+      .toggle.on .sw {
+        background: var(--accent);
+      }
+      .toggle.on .sw::after {
+        transform: translateX(16px);
+      }
+
+      .analysis {
+        margin-top: 12px;
+        background: var(--card);
+        border: 1.5px solid #e4ebf3;
+        border-radius: 13px;
+        padding: 12px 15px;
+        box-shadow: 0 3px 10px -6px rgba(52, 72, 97, 0.3);
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--ink-soft);
+        line-height: 1.6;
+        min-height: 44px;
+      }
+      .analysis .big {
+        font-family: var(--round);
+        font-weight: 800;
+        color: var(--ink);
+      }
+      .analysis .save {
+        color: var(--pos);
+      }
+      .analysis .placeholder {
+        color: var(--muted);
+        font-weight: 700;
       }
     </style>
   </head>
@@ -303,26 +441,45 @@
           <span class="o">OXO</span>
         </div>
         <div class="sub">A tic-tac-toe puzzle vs an unbeatable Minimax</div>
-        <div class="rules">
-          <span class="chip"
-            >You play <span class="o">O</span> · win with <b>O-X-O</b></span
-          >
-          <span class="chip"
-            >AI plays <span class="x">X</span> · wins with <b>X-O-X</b></span
-          >
-        </div>
       </header>
 
+      <div class="scoreboard">
+        <div class="score-pill you">
+          <div class="lbl">You · O</div>
+          <div class="num" id="scYou">0</div>
+        </div>
+        <div class="score-pill ai">
+          <div class="lbl">AI · X</div>
+          <div class="num" id="scAI">0</div>
+        </div>
+        <div class="score-pill draw">
+          <div class="lbl">Draws</div>
+          <div class="num" id="scDraw">0</div>
+        </div>
+      </div>
+
       <div class="status" id="status">
-        <span class="pip"></span>
-        <span class="msg" id="msg">Loading…</span>
+        <span class="pip"></span><span class="msg" id="msg">Loading…</span>
       </div>
 
       <div class="board" id="board"></div>
 
-      <div class="footer">
-        <button class="newgame" id="newgame">New game</button>
-        <div class="meta">unbeatable AI<br />full-depth search</div>
+      <div class="controls">
+        <button class="btn primary flex" id="newgame">New game</button>
+        <button class="btn flex" id="hint">💡 Hint</button>
+        <button class="btn flex" id="watch">▶ Watch AI</button>
+      </div>
+
+      <div class="toggle on" id="analysisToggle">
+        <span class="sw"></span>
+        <span>Show AI analysis — score of every move &amp; search cost</span>
+      </div>
+
+      <div class="analysis" id="analysis">
+        <span class="placeholder"
+          >The AI's per-move scores and search statistics will appear
+          here.</span
+        >
       </div>
     </div>
 
@@ -336,7 +493,7 @@
         MIN = "O",
         WIN = 100;
 
-      // ---------- Rules ----------
+      /* ---------- Rules (identical to the Java reference) ---------- */
       function allLines() {
         const L = [];
         for (let r = 0; r < ROWS; r++)
@@ -345,17 +502,16 @@
               [r, c],
               [r, c + 1],
               [r, c + 2],
-            ]); // rows
+            ]);
         for (let c = 0; c < COLS; c++)
           for (let r = 0; r + 2 < ROWS; r++)
             L.push([
               [r, c],
               [r + 1, c],
               [r + 2, c],
-            ]); // cols
+            ]);
         for (let r = 0; r + 2 < ROWS; r++)
           for (let c = 0; c + 2 < COLS; c++) {
-            // diagonals
             L.push([
               [r, c],
               [r + 1, c + 1],
@@ -370,7 +526,6 @@
         return L;
       }
       const LINES = allLines();
-
       function winningLine(g) {
         for (const ln of LINES) {
           const s =
@@ -392,13 +547,16 @@
         return true;
       }
 
-      // ---------- Minimax with alpha-beta + depth-aware scoring ----------
+      /* ---------- Minimax: alpha-beta (counts nodes) + a plain version for comparison ---------- */
+      let abNodes = 0,
+        plainNodes = 0;
+
       function minimax(g, maximizing, depth, alpha, beta) {
+        abNodes++;
         const res = result(g);
         if (res === 1) return WIN - depth;
         if (res === -1) return depth - WIN;
         if (isFull(g)) return 0;
-
         if (maximizing) {
           let best = -Infinity;
           for (let r = 0; r < ROWS; r++)
@@ -428,7 +586,28 @@
           return best;
         }
       }
-      function findBestMove(g) {
+      function minimaxPlain(g, maximizing, depth) {
+        plainNodes++;
+        const res = result(g);
+        if (res === 1) return WIN - depth;
+        if (res === -1) return depth - WIN;
+        if (isFull(g)) return 0;
+        let best = maximizing ? -Infinity : Infinity;
+        for (let r = 0; r < ROWS; r++)
+          for (let c = 0; c < COLS; c++)
+            if (g[r][c] === EMPTY) {
+              g[r][c] = maximizing ? MAX : MIN;
+              const v = minimaxPlain(g, !maximizing, depth + 1);
+              g[r][c] = EMPTY;
+              best = maximizing ? Math.max(best, v) : Math.min(best, v);
+            }
+        return best;
+      }
+
+      /* MAX (X): returns the chosen move plus the score of every candidate, and fills node counts. */
+      function analyseMax(g) {
+        abNodes = 0;
+        const scores = {};
         let bestScore = -Infinity,
           move = null;
         for (let r = 0; r < ROWS; r++)
@@ -437,7 +616,34 @@
               g[r][c] = MAX;
               const s = minimax(g, false, 1, -Infinity, Infinity);
               g[r][c] = EMPTY;
+              scores[r + "," + c] = s;
               if (s > bestScore) {
+                bestScore = s;
+                move = [r, c];
+              }
+            }
+        plainNodes = 0;
+        for (let r = 0; r < ROWS; r++)
+          for (let c = 0; c < COLS; c++)
+            if (g[r][c] === EMPTY) {
+              g[r][c] = MAX;
+              minimaxPlain(g, false, 1);
+              g[r][c] = EMPTY;
+            }
+        return { move, scores, ab: abNodes, plain: plainNodes };
+      }
+
+      /* MIN (O): the player's optimal move (used by Hint and Watch mode). */
+      function bestMoveMin(g) {
+        let bestScore = Infinity,
+          move = null;
+        for (let r = 0; r < ROWS; r++)
+          for (let c = 0; c < COLS; c++)
+            if (g[r][c] === EMPTY) {
+              g[r][c] = MIN;
+              const s = minimax(g, true, 1, -Infinity, Infinity);
+              g[r][c] = EMPTY;
+              if (s < bestScore) {
                 bestScore = s;
                 move = [r, c];
               }
@@ -445,16 +651,19 @@
         return move;
       }
 
-      // ---------- UI ----------
+      /* ---------- UI ---------- */
       const boardEl = document.getElementById("board");
       const statusEl = document.getElementById("status");
       const msgEl = document.getElementById("msg");
+      const analysisEl = document.getElementById("analysis");
       const cellEls = [];
-
       let grid, phase, startX;
-      // phases: 'placeX' -> 'placeO' -> 'ai' -> 'player' -> 'over'
+      let analysisOn = true;
+      let stats = { you: 0, ai: 0, draw: 0 };
+      // phases: placeX -> placeO -> ai -> player -> over -> watch
 
       function newGame() {
+        stopWatch();
         grid = Array.from({ length: ROWS }, () => Array(COLS).fill(EMPTY));
         phase = "placeX";
         startX = null;
@@ -463,6 +672,9 @@
           "x",
           "Tap a cell to place the starting <span class='hl' style='color:var(--x)'>X</span>",
         );
+        analysisEl.innerHTML =
+          "<span class='placeholder'>The AI's per-move scores and search statistics will appear here.</span>";
+        setControlsEnabled(true);
       }
 
       function buildBoard() {
@@ -482,7 +694,6 @@
           cellEls.push(row);
         }
       }
-
       function renderCell(r, c, { ai = false } = {}) {
         const el = cellEls[r][c];
         const v = grid[r][c];
@@ -491,14 +702,12 @@
         el.innerHTML = v === EMPTY ? "" : `<span class="mark">${v}</span>`;
         if (ai) el.classList.add("aimove");
       }
-
       function setStatus(kind, html) {
         statusEl.className =
           "status" + (kind ? " " + kind.replace("think", "") : "");
         msgEl.className = "msg" + (kind === "thinkx" ? " thinking" : "");
         msgEl.innerHTML = html;
       }
-
       function adjacent(r1, c1, r2, c2) {
         return Math.abs(r1 - r2) <= 1 && Math.abs(c1 - c2) <= 1;
       }
@@ -518,10 +727,7 @@
           if (grid[r][c] !== EMPTY) return;
           if (adjacent(r, c, startX[0], startX[1])) {
             flashInvalid(r, c);
-            setStatus(
-              "o",
-              "Too close to X — pick a cell that isn't touching it",
-            );
+            setStatus("o", "Too close to X — pick a non-adjacent cell");
             return;
           }
           grid[r][c] = MIN;
@@ -529,16 +735,15 @@
           aiTurn();
         } else if (phase === "player") {
           if (grid[r][c] !== EMPTY) return;
+          clearHints();
           grid[r][c] = MIN;
           renderCell(r, c);
           if (checkEnd()) return;
           aiTurn();
         }
       }
-
       function flashInvalid(r, c) {
-        const el = cellEls[r][c];
-        el.animate(
+        cellEls[r][c].animate(
           [
             { transform: "translateX(0)" },
             { transform: "translateX(-5px)" },
@@ -551,6 +756,7 @@
 
       function aiTurn() {
         phase = "ai";
+        clearHints();
         for (let r = 0; r < ROWS; r++)
           for (let c = 0; c < COLS; c++)
             cellEls[r][c].classList.remove("aimove");
@@ -558,19 +764,62 @@
           "thinkx",
           "<span style='color:var(--x)'>X</span> is thinking",
         );
-        setTimeout(() => {
-          const move = findBestMove(grid);
-          if (move) {
-            grid[move[0]][move[1]] = MAX;
-            renderCell(move[0], move[1], { ai: true });
+        const data = analyseMax(grid);
+        updateAnalysis(data);
+        if (analysisOn) {
+          showScores(data.scores, data.move);
+          setTimeout(() => {
+            clearScores();
+            commitAi(data.move);
+          }, 1150);
+        } else {
+          setTimeout(() => {
+            commitAi(data.move);
+          }, 460);
+        }
+      }
+      function commitAi(move) {
+        if (move) {
+          grid[move[0]][move[1]] = MAX;
+          renderCell(move[0], move[1], { ai: true });
+        }
+        if (checkEnd()) return;
+        phase = "player";
+        setStatus(
+          "o",
+          "Your turn — place an <span class='hl' style='color:var(--o)'>O</span>",
+        );
+      }
+
+      function fmtScore(s) {
+        return s > 0 ? "+" + s : "" + s;
+      }
+      function showScores(scores, best) {
+        for (let r = 0; r < ROWS; r++)
+          for (let c = 0; c < COLS; c++) {
+            const key = r + "," + c;
+            if (!(key in scores)) continue;
+            const s = scores[key];
+            const cls = s > 0 ? "pos" : s < 0 ? "neg" : "zero";
+            cellEls[r][c].innerHTML =
+              `<span class="score ${cls}">${fmtScore(s)}</span>`;
+            if (best && best[0] === r && best[1] === c)
+              cellEls[r][c].classList.add("best-score");
           }
-          if (checkEnd()) return;
-          phase = "player";
-          setStatus(
-            "o",
-            "Your turn — place an <span class='hl' style='color:var(--o)'>O</span>",
-          );
-        }, 480);
+      }
+      function clearScores() {
+        for (let r = 0; r < ROWS; r++)
+          for (let c = 0; c < COLS; c++) {
+            cellEls[r][c].classList.remove("best-score");
+            if (grid[r][c] === EMPTY) cellEls[r][c].innerHTML = "";
+          }
+      }
+      function updateAnalysis(d) {
+        const saved = d.plain > 0 ? Math.round((1 - d.ab / d.plain) * 100) : 0;
+        analysisEl.innerHTML =
+          `α-β pruning explored <span class="big">${d.ab}</span> states · ` +
+          `full search would visit <span class="big">${d.plain}</span> · ` +
+          `<span class="save">${saved}% fewer</span>`;
       }
 
       function checkEnd() {
@@ -578,28 +827,38 @@
         if (w) {
           w.line.forEach(([r, c]) => cellEls[r][c].classList.add("winning"));
           lockBoard();
-          phase = "over";
-          if (w.winner === MAX)
+          if (w.winner === MAX) {
+            stats.ai++;
             setStatus(
               "win",
               "<span style='color:var(--x)'>X wins</span> with <span class='hl'>XOX</span> — the AI is unbeatable",
             );
-          else
+          } else {
+            stats.you++;
             setStatus(
               "win",
               "<span style='color:var(--o)'>You win</span> with <span class='hl'>OXO</span>! 🎉",
             );
+            confetti();
+          }
+          endGame();
           return true;
         }
         if (isFull(grid)) {
           lockBoard();
-          phase = "over";
+          stats.draw++;
           setStatus("win", "Draw — a perfectly played game");
+          endGame();
           return true;
         }
         return false;
       }
-
+      function endGame() {
+        phase = "over";
+        refreshScore();
+        setControlsEnabled(true);
+        document.getElementById("hint").disabled = true;
+      }
       function lockBoard() {
         for (let r = 0; r < ROWS; r++)
           for (let c = 0; c < COLS; c++) {
@@ -607,8 +866,171 @@
             cellEls[r][c].classList.remove("empty");
           }
       }
+      function refreshScore() {
+        document.getElementById("scYou").textContent = stats.you;
+        document.getElementById("scAI").textContent = stats.ai;
+        document.getElementById("scDraw").textContent = stats.draw;
+      }
+
+      /* ---------- Hint ---------- */
+      function clearHints() {
+        for (let r = 0; r < ROWS; r++)
+          for (let c = 0; c < COLS; c++) cellEls[r][c].classList.remove("hint");
+      }
+      document.getElementById("hint").addEventListener("click", () => {
+        if (phase !== "player") return;
+        clearHints();
+        const m = bestMoveMin(grid);
+        if (m) {
+          cellEls[m[0]][m[1]].classList.add("hint");
+          setStatus("o", "Hint: your best move is highlighted");
+        }
+      });
+
+      /* ---------- Watch mode: optimal X vs optimal O, auto-played ---------- */
+      let watchTimer = null;
+      function stopWatch() {
+        if (watchTimer) {
+          clearTimeout(watchTimer);
+          watchTimer = null;
+        }
+      }
+      function setControlsEnabled(on) {
+        document.getElementById("hint").disabled = !on || phase !== "player";
+        document.getElementById("watch").disabled = !on;
+      }
+      document.getElementById("watch").addEventListener("click", () => {
+        stopWatch();
+        grid = Array.from({ length: ROWS }, () => Array(COLS).fill(EMPTY));
+        buildBoard();
+        phase = "watch";
+        document.getElementById("hint").disabled = true;
+        // random non-adjacent seed
+        const xr = Math.floor(Math.random() * ROWS),
+          xc = Math.floor(Math.random() * COLS);
+        grid[xr][xc] = MAX;
+        renderCell(xr, xc);
+        let or, oc;
+        do {
+          or = Math.floor(Math.random() * ROWS);
+          oc = Math.floor(Math.random() * COLS);
+        } while (grid[or][oc] !== EMPTY || adjacent(or, oc, xr, xc));
+        grid[or][oc] = MIN;
+        renderCell(or, oc);
+        setStatus("x", "Watching: both sides play optimally");
+        watchTimer = setTimeout(() => watchStep(true), 700);
+      });
+      function watchStep(xTurn) {
+        if (winningLine(grid) || isFull(grid)) {
+          checkWatchEnd();
+          return;
+        }
+        if (xTurn) {
+          setStatus(
+            "thinkx",
+            "<span style='color:var(--x)'>X</span> is thinking",
+          );
+          const data = analyseMax(grid);
+          updateAnalysis(data);
+          if (analysisOn) {
+            showScores(data.scores, data.move);
+            watchTimer = setTimeout(() => {
+              clearScores();
+              grid[data.move[0]][data.move[1]] = MAX;
+              renderCell(data.move[0], data.move[1], { ai: true });
+              if (!checkWatchEnd())
+                watchTimer = setTimeout(() => watchStep(false), 650);
+            }, 1100);
+          } else {
+            grid[data.move[0]][data.move[1]] = MAX;
+            renderCell(data.move[0], data.move[1], { ai: true });
+            if (!checkWatchEnd())
+              watchTimer = setTimeout(() => watchStep(false), 650);
+          }
+        } else {
+          setStatus("o", "<span style='color:var(--o)'>O</span> is thinking");
+          const m = bestMoveMin(grid);
+          grid[m[0]][m[1]] = MIN;
+          renderCell(m[0], m[1]);
+          if (!checkWatchEnd())
+            watchTimer = setTimeout(() => watchStep(true), 650);
+        }
+      }
+      function checkWatchEnd() {
+        const w = winningLine(grid);
+        if (w) {
+          w.line.forEach(([r, c]) => cellEls[r][c].classList.add("winning"));
+          lockBoard();
+          setStatus(
+            "win",
+            w.winner === MAX
+              ? "<span style='color:var(--x)'>X wins</span> with <span class='hl'>XOX</span>"
+              : "<span style='color:var(--o)'>O wins</span> with <span class='hl'>OXO</span>",
+          );
+          phase = "over";
+          return true;
+        }
+        if (isFull(grid)) {
+          lockBoard();
+          setStatus("win", "Draw — both played perfectly");
+          phase = "over";
+          return true;
+        }
+        return false;
+      }
+
+      /* ---------- Analysis toggle ---------- */
+      const toggleEl = document.getElementById("analysisToggle");
+      toggleEl.addEventListener("click", () => {
+        analysisOn = !analysisOn;
+        toggleEl.classList.toggle("on", analysisOn);
+      });
+
+      /* ---------- Confetti (self-contained) ---------- */
+      function confetti() {
+        const c = document.createElement("canvas");
+        c.style.cssText =
+          "position:fixed;inset:0;pointer-events:none;z-index:60";
+        c.width = innerWidth;
+        c.height = innerHeight;
+        document.body.appendChild(c);
+        const ctx = c.getContext("2d");
+        const colors = ["#2f7bf6", "#f4923b", "#3ec47a", "#ffd23f", "#ff6b9d"];
+        const P = [];
+        for (let i = 0; i < 150; i++)
+          P.push({
+            x: Math.random() * c.width,
+            y: -20 - Math.random() * c.height * 0.4,
+            vx: (Math.random() - 0.5) * 6,
+            vy: 3 + Math.random() * 5,
+            s: 5 + Math.random() * 7,
+            rot: Math.random() * 6.28,
+            vr: (Math.random() - 0.5) * 0.3,
+            col: colors[i % colors.length],
+          });
+        let t = 0;
+        (function frame() {
+          t++;
+          ctx.clearRect(0, 0, c.width, c.height);
+          for (const p of P) {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.13;
+            p.rot += p.vr;
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rot);
+            ctx.fillStyle = p.col;
+            ctx.fillRect(-p.s / 2, -p.s / 2, p.s, p.s * 0.6);
+            ctx.restore();
+          }
+          if (t < 170) requestAnimationFrame(frame);
+          else c.remove();
+        })();
+      }
 
       document.getElementById("newgame").addEventListener("click", newGame);
+      refreshScore();
       newGame();
     </script>
   </body>
