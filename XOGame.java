@@ -1,6 +1,7 @@
 // XOX vs OXO — a tic-tac-toe variant solved with Minimax
-// Copyright (c) 2025 Dimitris-Kosmas Karras, Panagiotis Theodoropoulos
-// Licensed under the MIT License (see LICENSE).
+/// Originally built for an Artificial Intelligence course assignment
+// Copyright (c) 2025 AbzZ3r0
+// Licensed under the MIT License (see LICENSE)
 
 import java.util.Scanner;
 
